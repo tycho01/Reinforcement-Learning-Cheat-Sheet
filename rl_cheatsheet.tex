@@ -9,6 +9,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{algorithm2e}
 \usepackage{float}
+\usepackage{ragged2e}
+\usepackage{enumitem}
 % \usepackage{xeCJK}
 
 \geometry{top=1cm,left=1cm,right=1cm,bottom=1cm}
@@ -28,7 +30,14 @@
     {-1ex plus -.5ex minus -.2ex}%
     {1ex plus .2ex}%
     {\normalfont\small\bfseries}}
+\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
+% wrappable brace text
+\newlength\ubwidth
+\newcommand\parunderbrace[2]{\settowidth\ubwidth{$#1$}\underbrace{#1}_{\parbox{\ubwidth}{\scriptsize\RaggedRight#2}}}
+\newcommand\paroverbrace[2]{\settowidth\ubwidth{$#1$}\overbrace{#1}^{\parbox{\ubwidth}{\scriptsize\RaggedRight#2}}}
+
 \makeatother
+
 % BibTeX command
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -54,6 +63,7 @@
 
 \newcommand\pro{\item[$+$]}
 \newcommand\con{\item[$-$]}
+\newcommand\red{\textcolor{red}}
 
 \begin{center}
     \Large{Reinforcement Learning (RL)} \\ % Cheat Sheet
@@ -77,13 +87,13 @@
     % \item[$blackboard bold$]
     % set
     \item[$a$]
-    action, arm (multi-armed bandit problem)
+    action %, arm (multi-armed bandit problem)
     \item[$A$]
     advantage
     \item[$\alpha$]
     learning rate, step size
     \item[$b$]
-    bandit, baseline estimate, bias
+    bandit, baseline estimate %, bias
     \item[$c$]
     cost, context (= state)
     \item[$d$]
@@ -99,17 +109,17 @@
     % \item[$\mathbb{E} / E$]
     % expected value
     \item[$\epsilon$]
-    exploration rate (0~1)
+    exploration rate ($0 \sim 1$)
     % \item[$f$]
     % function
-    \item[$\phi$]
+    \item[$\Phi$]
     state transition function
     \item[$g$]
-    gain (reward over time) %, target
+    gain % (reward over time) %, target
     \item[$\gamma$]
     discount factor
     \item[$\nabla$]
-    gradient (spacial derivative)
+    gradient % (spacial derivative)
     \item[$H$]
     horizon
     % \item[$i$]
@@ -117,15 +127,15 @@
     % \item[$j$]
     % next round
     \item[$J$]
-    expected return (see loss)
+    expected return % (see loss)
     % \item[$k$]
     % some amount
     \item[$L$]
-    expected (squared) loss (see return)
+    loss / regret % expected (squared) loss % (see return)
     \item[$\lambda$]
-    trace decay (0~1)
-    \item[$m$]
-    momentum % amount, matrix rows
+    trace decay ($0 \sim 1$)
+    % \item[$m$]
+    % momentum % amount, matrix rows
     % \item[$\mu$]
     % mean
     % \item[$n$]
@@ -135,7 +145,7 @@
     % \item[$O / \Omega$]
     % order of magnitude
     % \item[$p$]
-    % probability (0~1)
+    % probability ($0 \sim 1$)
     \item[$Pr$]
     transition distribution
     \item[$\pi$]
@@ -148,8 +158,8 @@
     reward
     \item[$R$]
     return
-    \item[$\rho$]
-    regret
+    % \item[$\rho$]
+    % regret
     % \item[$\mathbb{R}$]
     % real number space
     \item[$s$]
@@ -163,7 +173,7 @@
     \item[$\tau$]
     trajectory
     \item[$\theta$]
-    parameter weight (learning target) %, small positive number (iteration)
+    parameter weight % (learning target) %, small positive number (iteration)
     % \item[$\theta_{i}^{-}$]
     % target network (time i-1)
     % \item[$u$]
@@ -172,10 +182,10 @@
     % ??? (DQN replay buffer)
     \item[$v$]
     value
-    \item[$vm$]
-    variance momentum
+    % \item[$vm$]
+    % variance momentum
     \item[$w$]
-    weight, winning probability
+    weight %, winning probability
     % \item[$x$]
     % observation
     \item[$y$]
@@ -193,49 +203,110 @@
 
 \section{Agent-Environment Interface}
 \includegraphics[width=\linewidth]{./images/Agent-Environment.png}
-The Agent at each step $t$ receives a representation of the environment's \emph{state},
-$S_t \in S$ and it selects an action $A_t \in A(s)$.
-From its action the agent receives a \emph{reward}, $R_{t + 1} \in R \in \mathbb{R}$.
 
-\section{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit}{Bandits}}
+\section{General model}
+\begin{enumerate}
+    \item the \emph{agent} at each time step $t$ receives a representation of the environment's \emph{state} $S_t \in S$
+    \item it selects an action $A_t \in A(s)$
+    \item from its action the agent receives a \emph{reward} $R_{t + 1} \in R \in \mathbb{R}$
+\end{enumerate}
+
+\section{General challenges}
 \begin{itemize}
-    \item solve multi-armed bandit problem
-    \item no state % model picking actions without state
-    \item reduces RL to exploration vs exploitation
+    \item choosing the right \emph{Representation} of the problem / state
+    \item \emph{Generalization} beyond the cases trained on
+    \item \emph{Temporal Credit Assignment}: what caused this outcome?
+    \item balance \emph{Exploitation} vs \emph{Exploration} (short vs long term)
 \end{itemize}
 
-They estimate $\hat{r}_{a}  $$\approx$$  \mathbb E[r|a]$
+\section{Concepts (no state)}
+
+\begin{equation}
+    \begin{array}{l l}
+        \underbrace{a}_\text{state} &\in \underbrace{A}_\text{finite set of actions}\\
+        \underbrace{R}_\text{return} &= \underbrace{\sum_{t = 0}^{\overbrace{H}^\text{horizon ($\infty$?)}} r_t}_\text{total \emph{reward} over time}\\
+        \underbrace{G_t}_\text{gain} &= \underbrace{
+            \sum_{k = 0}^{H} \red{\overbrace{\gamma^k}^\text{discount factor}} r_{t + k + 1}
+        }_\text{total \red{discounted} reward over time}\\
+        \underbrace{L}_\text{regret} &= \underbrace{\overbrace{G^\ast}^\text{optimal gain} - \overbrace{G_\pi}^\text{gain under policy}}_\text{gain missed under policy}\\ %loss / 
+    \end{array}
+\end{equation}
+
+\section{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit}{Bandit algorithms}}
+
+\begin{itemize}
+    \item \emph{multi-armed bandit problem}: which slot arm gives most?
+    \item no notion of state!
+    \item this leaves just \emph{exploration vs exploitation}
+\end{itemize}
+
+\includegraphics[width=\linewidth]{./images/bandit.png}
+
+\begin{equation}
+    \begin{array}{l l}
+        \underbrace{n_{a}}_\text{action's use count} &= \underbrace{\sum_{t=0}^T \begin{cases}
+            1 & a_t = a\\
+            0 & \text{otherwise}
+        \end{cases}}_\text{tries for action so far}\\
+        \underbrace{\hat{r}_{a}}_\text{action's expected reward} &= \underbrace{\sum_{t}^a \frac{r_{t}}{n_{a}}}_\text{average action reward so far}\\
+    \end{array}
+\end{equation}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Greedy_algorithm}{Greedy}}
+
+\begin{itemize}
+    \item 100\% exploitation
+    \item wants to pick best arm but won't know enough
+    \con if 1st arm ok won't try others (stuck in local optimum)
+\end{itemize}
+
 \begin{equation}
-\begin{array}{l l}
-    n_{a} &= \sum_{t}^a 1\\
-    \hat{r}_{a} &= \sum_{t}^a \frac{r_{t}}{n_{a}}\\
-    a_{t} = \argmax\limits_{a \in A} \hat{r}_{a}
-\end{array}
+    \begin{array}{l l}
+        \underbrace{a_{t}}_\text{action at time $t$} &= \underbrace{\argmax\limits_{a \in A} \hat{r}_{a}}_\text{action with max expected reward}\\
+        \underbrace{L_T}_\text{total regret}
+            % &\underbrace{\propto}_\text{is proportional to}
+            &\propto
+            \underbrace{O(n)}_\text{order of magnitude \emph{linear} to the number of actions}\\
+    \end{array}
 \end{equation}
 
 \subsection{Optimistic-Greedy}
-large initial $\hat{r}_{a}$ %, R
+\begin{itemize}
+    % \item param $R$: initial $\hat{r}_{a}$ (large)
+    \item like greedy but large initial $\hat{r}_{a}$
+    \pro tries all
+    \con no 2nd chance for arms unlucky on first try
+\end{itemize}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Semi-uniform_strategies}{\texorpdfstring{$\epsilon$}{Epsilon}-Greedy}}
-for probability $\epsilon$, pick randomly
+\begin{itemize}
+    \item at probability $\epsilon$ pick randomly
+    \pro not fooled by unlucky first try
+    \con linear regret from constant exploration
+\end{itemize}
 
 \subsection{Upper Confidence Bound (UCB)}
+
 try all for k rounds, then
 \begin{equation}
-    a_{t} = \argmax\limits_{a \in A} { \hat{r}_{a} + \sqrt{\frac{2 \log t}{n_{a}}} }
+    a_{t} = \argmax\limits_{a \in A} [ \underbrace{\hat{r}_{a}}_\text{reward} + %
+        \underbrace{\sqrt{\frac{2 \log t}{n_{a}}}}_\text{under-explored bonus} ]
 \end{equation}
+
+\begin{itemize}
+    \item explore then gradually exploit
+    \pro logarithmic regret
+\end{itemize}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Contextual_bandit}{Contextual Bandit}}
 
 \subsubsection{Linear UCB (LinUCB)} % Upper Conditional Bound
 \begin{equation}
-\begin{array}{l l}
-    x_{t,a} &= \Phi(s_{t,a})\\
-    \mathbb E[r_{t,a}|x_{t,a}] &= \theta_{a} \cdot x_{t,a}\\
-    \hat{\theta}_{a} &= A^{-1} b
-\end{array}
+    \begin{array}{l l}
+        x_{t,a} &= \Phi(s_{t,a})\\
+        \mathbb E[r_{t,a}|x_{t,a}] &= \theta_{a} \cdot x_{t,a}\\
+        \hat{\theta}_{a} &= A^{-1} b\\
+    \end{array}
 \end{equation}
 
 \subsection{Posterior / Thompson sampling}
@@ -247,81 +318,35 @@ Pick actions by probability they maximize expected reward
     \item converges on greedy
 \end{itemize}
 
-\section{Concepts}
+\section{\href{https://en.wikipedia.org/wiki/Markov_decision_process}{Markov Decision Process (MDP)}}
 
-\subsection{Reward}
-% Total \emph{reward}:
-\begin{equation}
-    G_t = \sum_{k = 0}^H \gamma^kr_{t + k + 1}
-    \label{eq: total_reward}
-\end{equation}
-for \emph{discount factor} $\gamma$ and (infinite?) \emph{horizon} $H$.
-
-\subsection{Policy}
-A \emph{policy} maps a state to an action
-\begin{equation}
-    \pi_t(a|s)
-    \label{eq: policy}
-\end{equation}
-probability to pick an action $A_t = a$ if $S_t = s$.
-
-\subsection{\href{https://en.wikipedia.org/wiki/Markov_decision_process}{Markov Decision Process (MDP)}}
-
-a 5-tuple $(S, A, P, R, \gamma)$ % where:
-\begin{equation}
-        \begin{array}{l}
-        %  \text{finite set of states:} \\
-        %         s \in S \\
-        %  \text{finite set of actions:} \\
-        % a \in A \\
-                 \text{state transition probabilities:} \\
-        p(s'|s,a) = Pr \{S_{t + 1} = s' | S_t=s,A_t=a\} \\
-                \text{expected reward for state-action-nexstate:}\\
-        r(s',s, a) = \mathbb{E}[ R_{t + 1} | S_{t + 1}=s',S_t=s,A_t=a]  \\
-        \end{array}
-\end{equation}
-
-\subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{Value Function}}
-
-Value (expected return, total discounted reward) of a specific state $s$ under policy $\pi$ for a MDP:
+a 5-tuple $(S, A, P, R, \gamma)$
 
 \begin{equation}
-\begin{array}{l l}
-    v_{\pi}(s) &= \mathbb{E}_{\pi}[G_t | S_t = s]\\
-    % &=  \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^kR_{t + k + 1} | S_t = s]\\
-    % &= \mathbb{E}_{\pi}[R_{t + 1} + \sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_t = s]\\
-    % &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)}_{\text{Sum of all probabilities $\forall$ possible $r$}} \\
-    % & [r + \gamma \underbrace{\mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t + 1} = s']}_{\text{Expected reward from } s_{t + 1}}]\\
-    &= \sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)[r + \gamma v_{\pi}(s')]\\
-    v_{\textcolor{red}{\ast}}(s) &= \textcolor{red}{\max\limits_{\pi}} v_\pi(s)
-\end{array}
-\label{eq: value_func}
+    \begin{array}{l l}
+        \underbrace{s}_\text{state} &\in \underbrace{S}_\text{finite set of states}\\
+        \underbrace{\pi_t(a|s)}_\text{policy} &: \text{a mapping from a state to an action}\\
+        % probability to pick an action $A_t = a$ if $S_t = s$.
+        p(s'|s,a) &= \underbrace{Pr \{S_{t + 1} = s' | S_t=s,A_t=a\}}_\text{state transition probabilities}\\
+        r(s',s, a) &= \underbrace{\mathbb{E}[ R_{t + 1} | S_{t + 1}=s',S_t=s,A_t=a]}_\text{expected return for state-action-nexstate}\\
+        \underbrace{v_{\pi}(s)}_\text{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{value function}} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s]}_\text{expected gain under policy $\pi$ in state $s$}\\
+        % &=  \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^kR_{t + k + 1} | S_t = s]\\
+        % &= \mathbb{E}_{\pi}[R_{t + 1} + \sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_t = s]\\
+        % &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)}_{\text{Sum of all probabilities $\forall$ possible $r$}} \\
+        % & [r + \gamma \underbrace{\mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t + 1} = s']}_{\text{Expected reward from } s_{t + 1}}]\\
+        &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)[r + \gamma v_{\pi}(s')]}_\text{recursive definition (Bellman equation)}\\
+        \underbrace{q_{\pi}(s,a)}_\text{action-value (Q) function} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]}_\text{expected reward under policy $\pi$ for a state-action pair}\\
+        % &= \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 1} | S_t = s, A_t = a]\\
+        % &= \mathbb{E}_{\pi}[R_{t+1} + \sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 2} | S_t = s, A_t = a]\\
+        % &=\sum\limits_{s',r} p(s',r|s,a)[r +\mathbb{E}_{\pi} [\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t+1} = s']]\\
+        &= \underbrace{\sum\limits_{s',r} p(s',r|s,a)[r + \gamma V_{\pi}(s')]}_\text{recursive definition (Bellman equation)}\\
+        \underbrace{q_{\red{\ast}}(s,a)}_\text{optimal Q function} &= \red{\max\limits_{\pi}} q_\pi(s,a)\\
+        \underbrace{v_{\red{\ast}}(s)}_\text{state value under optimal policy} &= \red{\max\limits_{\pi}} v_\pi(s)\\
+        % \text{rewriting $v_\ast$ for $q_\ast(s,a)$}\\
+        % v_\ast(s)
+        &= \underbrace{\max\limits_{a \in A(s)} q_{\pi_\ast}(s,a)}_\text{expected return from its best action}\\
+    \end{array}
 \end{equation}
-
-\subsection{Action-Value (Q) Function}
-
-expected reward for state-action pairs:
-\begin{equation}
-\begin{array}{l l}
-    q_{\pi}(s,a) &= \mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]\\
-    % &= \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 1} | S_t = s, A_t = a]\\
-    % &= \mathbb{E}_{\pi}[R_{t+1} + \sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 2} | S_t = s, A_t = a]\\
-    % &=\sum\limits_{s',r} p(s',r|s,a)[r +\mathbb{E}_{\pi} [\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t+1} = s']]\\
-    &=\sum\limits_{s',r} p(s',r|s,a)[r + \gamma V_{\pi}(s')]\\
-    q_{\textcolor{red}{\ast}}(s,a) &= \textcolor{red}{\max\limits_{\pi}} q_\pi(s,a)
-\end{array}
-\label{eq: q_func}
-\end{equation}
-
-rewriting $v_\ast$ for $q_\ast(s,a)$:
-\begin{equation}
-    v_\ast(s) = \max\limits_{a \in A(s)} q_{\pi_\ast}(s,a)
-\end{equation}
-
-i.e. state value under optimal policy \textbf{=} expected return from its best action.
-
-\subsection{Bellman Equation}
-Recursive property $Value$ \ref{eq: value_func} / $Q$ \ref{eq: q_func} functions
 
 \subsection{Contraction Mapping}
 
@@ -357,16 +382,14 @@ Find $\pi_\ast$ for $V$ / $Q$:
 
 \begin{algorithm}[H]
 %\SetAlgoLined
-Initialize $V(s) \in \mathbb{R} \text{e.g. }0$, $\Delta \leftarrow 0$, \textcolor{red}{$\pi(s) \in A$ for all $s \in S$} \\
+Initialize $V(s) \in \mathbb{R} \text{e.g. }0$, $\Delta \leftarrow 0$, \red{$\pi(s) \in A$ for all $s \in S$} \\
  1. Policy Evaluation \\
  \While{$\Delta < \theta$ (e.g. 0.001)}{
   \ForEach{$s \in S$} {
-        $v \leftarrow V(s)$\\
-        $V(s) \leftarrow \textcolor{red}{\sum\limits_a \pi(a|s)} \sum\limits_{s', r} p(s',r | s, a) [
-                r + \gamma V(s')
-       ]$ \\
-        $\Delta \leftarrow \max(\Delta, | v - V(s)|)$
-        }
+    $v \leftarrow V(s)$\\
+    $V(s) \leftarrow \red{\sum\limits_a \pi(a|s)} \sum\limits_{s', r} p(s',r | s, a) [r + \gamma V(s')]$ \\
+    $\Delta \leftarrow \max(\Delta, | v - V(s)|)$
+  }
  }
  2. Policy Improvement \\
  \emph{policy-stable} $ \leftarrow $ \emph{true} \\
@@ -396,9 +419,7 @@ ditch $V(s)$ convergence for policy improvement and truncated policy eval step i
  \While{$\Delta < \theta$ (e.g. 0.001)}{
   \ForEach{$s \in S$} {
     $v \leftarrow V(s)$\\
-    $V(s) \leftarrow \textcolor{red}{\max\limits_a} \sum\limits_{s', r} p(s',r | s, a) [
-            r + \gamma V(s')
-   ]$ \\
+    $V(s) \leftarrow \red{\max\limits_a} \sum\limits_{s', r} p(s',r | s, a) [r + \gamma V(s')]$ \\
     $\Delta \leftarrow \max(\Delta, | v - V(s)|)$
   }
  }
@@ -438,7 +459,7 @@ ditch $V(s)$ convergence for policy improvement and truncated policy eval step i
 
 estimate for non-stationary problems:
 \begin{equation}
-    V(S_t) \leftarrow V(S_t) + \alpha [G_t - V(S_t)]
+    V(S_t) += \alpha [G_t - V(S_t)]
 \end{equation}
 for learning rate $\alpha$, how much we want to forget about past experiences.
 
@@ -450,7 +471,7 @@ for learning rate $\alpha$, how much we want to forget about past experiences.
 \end{itemize}
 
 \begin{equation}
-    V(S_t) \leftarrow V(S_t) + \alpha [R_{t + 1} + \gamma V(S_{t+1} - V(S_t)]
+    V(S_t) += \alpha [R_{t + 1} + \gamma V(S_{t+1} - V(S_t)]
 \end{equation}
 
 \subsubsection{\href{https://en.wikipedia.org/wiki/State-action-reward-state-action}{State-action-reward-state-action (SARSA)}}
@@ -460,7 +481,7 @@ for learning rate $\alpha$, how much we want to forget about past experiences.
 \end{itemize}
 
 % \begin{equation}
-%     Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[\textcolor{red}{r_t + \gamma Q(s_{t+1}, a_{t+1})} - Q(s_t, a_t) \right]
+%     Q(s_t, a_t) += \alpha \left[\red{r_t + \gamma Q(s_{t+1}, a_{t+1})} - Q(s_t, a_t) \right]
 % \end{equation}
 
 \begin{algorithm}[H]
@@ -471,7 +492,7 @@ for learning rate $\alpha$, how much we want to forget about past experiences.
             Take action $a$, observe $r, s'$ \\
             Pick $a'$ from $s'$ by policy from $Q$ (e.g., $\epsilon$-greedy) \\
             $y \leftarrow r + \gamma Q(s',a')$\\
-            $Q(s,a) \leftarrow Q(s,a) + \alpha [\textcolor{red}{y} - Q(s,a)]$\\
+            $Q(s,a) += \alpha [\red{y} - Q(s,a)]$\\
             $s \leftarrow s'$ \\
             $a \leftarrow a'$
         }
@@ -484,19 +505,19 @@ for $n$-step Q-Return:
 % $n$-step Sarsa update $Q(s, a)$ towards the $n$-step Q-return
 
 \begin{equation}
-\begin{array}{l l}
-    q_{t}^{(n)} &= \gamma^n Q(S_{t+n}) + \sum_{i=1}^{n} \gamma^{i-1} R_{t+i}\\
-    Q(s_t, a_t) &\leftarrow Q(s_t, a_t) + \alpha \left[\textcolor{red}{q_t^{(n)}} - Q(s_t, a_t) \right]
-\end{array}
+    \begin{array}{l l}
+        q_{t}^{(n)} &= \gamma^n Q(S_{t+n}) + \sum_{i=1}^{n} \gamma^{i-1} R_{t+i}\\
+        Q(s_t, a_t) &+= \alpha \left[\red{q_t^{(n)}} - Q(s_t, a_t) \right]\\
+    \end{array}
 \end{equation}
 
 \paragraph{Forward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
 
 \begin{equation}
-\begin{array}{l l}
-    q_t^\lambda &= \textcolor{red}{(1-\lambda) \sum_{n=1}^\infty \lambda^{n-1}} q_t^{(n)}\\
-    Q(s_t, a_t) &\leftarrow Q(s_t, a_t) + \alpha \left[\textcolor{red}{q_t^\lambda} - Q(s_t, a_t) \right]
-\end{array}
+    \begin{array}{l l}
+        q_t^\lambda &= \red{(1-\lambda) \sum_{n=1}^\infty \lambda^{n-1}} q_t^{(n)}\\
+        Q(s_t, a_t) &+= \alpha \left[\red{q_t^\lambda} - Q(s_t, a_t) \right]\\
+    \end{array}
 \end{equation}
 
 \paragraph{Backward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
@@ -509,12 +530,12 @@ for $n$-step Q-Return:
 \end{itemize}
 
 \begin{equation}
-\begin{array}{l l}
-    E_0(s,a) &= 0\\
-    E_t(s,a) &= \gamma \lambda E_{t-1}(s,a) + \textbf{1}(S_t=t,A_t=a)\\
-    \delta_t &= R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t,A_t)\\
-    Q(s,a) &\leftarrow Q(s,a) + \alpha \textcolor{red}{\delta_t E_t(s,a)}
-\end{array}
+    \begin{array}{l l}
+        E_0(s,a) &= 0\\
+        E_t(s,a) &= \gamma \lambda E_{t-1}(s,a) + \textbf{1}(S_t=t,A_t=a)\\
+        \delta_t &= R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t,A_t)\\
+        Q(s,a) &+= \alpha \red{\delta_t E_t(s,a)}\\
+    \end{array}
 \end{equation}
 
 \subsection{Linear Function Approximation}
@@ -526,35 +547,35 @@ for $n$-step Q-Return:
 update temporal difference error, minimize squared loss:
 
 \begin{equation}
-\begin{array}{l l}
-    \delta &\leftarrow r_{t} + \gamma \textcolor{red}{\theta^{T}} \phi(s_{t+1}) - \textcolor{red}{\theta^{T}} \phi(s_{t})\\
-    \theta &\leftarrow \theta + \alpha\delta\phi(s_{t})\\
-    J(\theta) &= ||\delta||^{2}
-\end{array}
+    \begin{array}{l l}
+        \delta &\leftarrow r_{t} + \gamma \red{\theta^{T}} \Phi(s_{t+1}) - \red{\theta^{T}} \Phi(s_{t})\\
+        \theta &+= \alpha \delta \Phi(s_{t})\\
+        J(\theta) &= ||\delta||^{2}\\
+    \end{array}
 \end{equation}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Q-learning}{Q Learning}}
 
 \begin{equation}
-\begin{array}{l l}
-    \delta &\leftarrow r_{t} + \gamma \textcolor{red}{\argmax\limits_{a \in A}Q(}%
-        \phi(s_{t+1},a)\textcolor{red}{; \theta_{i}^{-})} - %
-        \textcolor{red}{Q(}\phi(s_{t},a)\textcolor{red}{; \theta_{i})}\\
+    \begin{array}{l l}
+        \delta &\leftarrow r_{t} + \gamma \red{\argmax\limits_{a \in A}Q(}%
+            \Phi(s_{t+1},a)\red{; \theta_{i}^{-})} - %
+            \red{Q(}\Phi(s_{t},a)\red{; \theta_{i})}\\
 % \end{equation}
 % \begin{equation}
     % J(\theta) &= ||\delta||^{2}\\
 % \end{equation}
 % Update rule:
 % \begin{equation}
-    Q(s,a) &\leftarrow Q(s,a) + \alpha [r + \gamma \textcolor{red}{\max\limits_{a'}} Q(s',a') - Q(s,a)]
-\end{array}
+        Q(s,a) &+= \alpha [r + \gamma \red{\max\limits_{a'}} Q(s',a') - Q(s,a)]\\
+    \end{array}
 \end{equation}
 
 \subsubsection{Replay Memory}
 update $\theta$ by SGD
 
 \begin{equation}
-    \nabla_{\theta_{i}}J(\theta_{i}) = \mathbb{E}_{(s_{t},a_{t},r_{t},s_{t+1}) \sim D} \delta \nabla_{\theta_{i}}Q(\phi(s_{t},a_{t}); \theta)
+    \nabla_{\theta_{i}}J(\theta_{i}) = \mathbb{E}_{(s_{t},a_{t},r_{t},s_{t+1}) \sim D} \delta \nabla_{\theta_{i}}Q(\Phi(s_{t},a_{t}); \theta)
 \end{equation}
 
 \subsubsection{\href{https://en.wikipedia.org/wiki/Q-learning\#Deep_Q-learning}{Deep Q Learning (DQL)}}
@@ -563,25 +584,25 @@ Made by $DeepMind$, uses a deep neural net (\emph{Q-network}) for the $Q$ functi
 Keeps $N$ observations in a $memory$ to train on.
 
 \begin{equation}
-\begin{array}{l l}
-    y = r_t + \gamma \textcolor{red}{\max\limits_{a \in A}} Q(\phi(s_{t+1},a); \theta_i^{-})\\
-    \nabla_{i}J(\theta_{i}) = \mathbb{E}_{(s, a, r, s') \sim \textcolor{red}{U}(D)} [(
-        y % \underbrace{r + \gamma \max\limits_{a} Q(s',a'; \theta_{i-1})}_\text{target} %
-        - \underbrace{Q(s,a;\theta_i)}_\text{prediction})^2]
-\end{array}
+    \begin{array}{l l}
+        y &= r_t + \gamma \red{\max\limits_{a \in A}} Q(\Phi(s_{t+1},a); \theta_i^{-})\\
+        \underbrace{\nabla_{i}J(\theta_{i})}_\text{loss function} &= \mathbb{E}_{(s, a, r, s') \sim \underbrace{\red{U}(D)}_\text{memory}} [(
+            \underbrace{y}_\text{target} % r + \gamma \max\limits_{a} Q(s',a'; \theta_{i-1}) %
+            - \underbrace{Q(s,a;\theta_i)}_\text{prediction})^2]\\
+    \end{array}
 \end{equation}
 
 for network weights $\theta$ and experience replay history $U(D)$.
 
 \begin{algorithm}[H]
- \textcolor{red}{Initialize replay memory $D$ with capacity $N$}\\
+ \red{Initialize replay memory $D$ with capacity $N$}\\
  Initialize $Q(s,a)$ arbitrarily \\
  \ForEach{episode $\in$ episodes}{
     Pick $a$ from $s$ by policy from $Q$ (e.g. $\epsilon$-greedy) \\
     \While{$s$ is not terminal} {
         % With probability $\epsilon$ select a random action $a \in A(s)$ \\
         % otherwise select $a = \max\limits_{a} Q(s, a; \theta)$ \\
-        \textcolor{red}{
+        \red{
         Take action $a$, observer $r, s'$ \\
         Store transition $(s, a, r, s')$ in $D$ \\
         Sample random transitions % minibatch $(s_j, a_j, r_j, s'_j)$
@@ -598,6 +619,7 @@ for network weights $\theta$ and experience replay history $U(D)$.
 \end{algorithm}
 
 \paragraph{Prioritized Replay Memory}
+
 learn esp. from high loss (traumas)
 
 \begin{equation}
@@ -608,7 +630,7 @@ learn esp. from high loss (traumas)
 solve bias from reused $\theta$, faster
 
 \begin{equation}
-    y = r_t + \gamma Q(\Phi(s_{t+1}, \textcolor{red}{\argmax\limits_{a \in A}} Q(\Phi(s_{t+1},a); \textcolor{red}{\theta_i})); \textcolor{red}{\theta_i^{-}})
+    y = r_t + \gamma Q(\Phi(s_{t+1}, \red{\argmax\limits_{a \in A}} Q(\Phi(s_{t+1},a); \red{\theta_i})); \red{\theta_i^{-}})
 \end{equation}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Direct_policy_search}{Direct Policy Search}}
@@ -628,52 +650,41 @@ learn $\pi$.
 
 \subsection{Likelihood Ratio}
 
-return state-action trajectory:
 \begin{equation}
-    R(\tau) = \sum_{t=0}^T R(s_t,a_t)
+    \begin{array}{l l}
+        &\text{return state-action trajectory:}\\
+        R(\tau) &= \sum_{t=0}^T R(s_t,a_t)\\
+        &\text{expected return:}\\
+        J(\theta) &= \mathbb{E}[\sum_{t=0}^T R(s_t,a_t); \pi_\theta]\\
+        &= \sum_\tau^T R(s_t,a_t); \pi_\theta\\
+        &\text{find $\theta$ to max:}\\
+        % J(\theta) 
+        &= \sum_\tau P(\tau; \theta) R(\tau)\\
+        &\text{yielding:}\\
+        \red{\max\limits_\theta} J(\theta) &= \red{\max\limits_\theta} \sum_\tau P(\tau; \theta) R(\tau)\\
+        % &\text{decomposing trajectories:}\\
+        % \nabla_\theta \log P(\tau; \theta) &= \nabla_\theta \sum_{t=0}^T \log \pi_\theta (a_t|s_t)\\
+        % &\text{given gradient:}\\
+        % \nabla_x \log f(x) &= \frac{\nabla_x f(x)}{f(x)}\\
+        % &\text{yields:}\\
+        &\text{gradient chasing reward:}\\
+        \red{\nabla_\theta} J(\theta) &= \sum_\tau P(\tau; \theta) \red{\nabla_\theta \log P(\tau; \theta)} R(\tau)\\
+        &\text{sampled over m trajectories:}\\
+        % \nabla_\theta J(\theta)
+        &= \red{\frac{1}{m}} \sum_{\red{i=1}}^{\red{m}} P(\tau; \theta) \nabla_\theta \log P(\tau_{\red{i}}; \theta) R(\tau_{\red{i}})\\
+        &\text{combined:}\\
+        % \nabla_\theta J(\theta)
+        &= \frac{1}{m} \sum_{i=1}^{m} \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta (a_t|s_t) R(\tau_i)\\
+        % &\text{}\\
+    \end{array}
 \end{equation}
-
-expected return:
-\begin{equation}
-\begin{array}{l l}
-    J(\theta) &= \mathbb{E}[\sum_{t=0}^T R(s_t,a_t); \pi_\theta]\\
-    &= \sum_\tau^T R(s_t,a_t); \pi_\theta\\
-\end{array}
-\end{equation}
-
-find $\theta$ to max:
-\begin{equation}
-    J(\theta) = \sum_\tau P(\tau; \theta) R(\tau)
-\end{equation}
-
-yielding:
-\begin{equation}
-    \textcolor{red}{\max\limits_\theta} J(\theta) = \textcolor{red}{\max\limits_\theta} \sum_\tau P(\tau; \theta) R(\tau)
-\end{equation}
-
-% given gradient:
-% \begin{equation}
-%     \nabla_x \log f(x) = \frac{\nabla_x f(x)}{f(x)}
-% \end{equation}
-
-% yields:
-\begin{equation}
-    \textcolor{red}{\nabla_\theta} J(\theta) = \sum_\tau P(\tau; \theta) \textcolor{red}{\nabla_\theta \log P(\tau; \theta)} R(\tau)
-\end{equation}
-
-sampled over m trajectories:
-\begin{equation}
-    \nabla_\theta J(\theta) = \textcolor{red}{\frac{1}{m}} \sum_{\textcolor{red}{i=1}}^{\textcolor{red}{m}} P(\tau; \theta) \nabla_\theta \log P(\tau^{\textcolor{red}{i}}; \theta) R(\tau^{\textcolor{red}{i}})
-\end{equation}
-
-gradient chases reward.
 
 \subsection{REINFORCE}
 
 \begin{itemize}
-    \item Get info on states/actions/rewards for policy during episode
-    \item Calc episode return for collected rewards
-    \item Update model params toward policy gradient
+    \item check policy/episode's states/actions/rewards
+    \item calc episode return for collected rewards
+    \item update model params toward policy gradient
 \end{itemize}
 
 \begin{equation}
@@ -682,14 +693,13 @@ gradient chases reward.
 
 desired loss function:
 \begin{equation}
-    \textcolor{red}{\frac{1}{m}} \sum_{t=1}^m \nabla_\theta \log \pi_\theta(a_t|s_t) R
+    \red{\frac{1}{m}} \sum_{t=1}^m \nabla_\theta \log \pi_\theta(a_t|s_t) R
 \end{equation}
 
 \subsubsection{Baselined REINFORCE}
-use baselined rewards
 
 \begin{equation}
-    \nabla_\theta J(\theta)=\sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_{t}|s_{t}) (R \textcolor{red}{- V_{\phi(s_{t})}})
+    \nabla_\theta J(\theta)=\sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_{t}|s_{t}) \underbrace{(R \red{- V_{\Phi(s_{t})}})}_\text{baselined reward}
 \end{equation}
 
 \subsection{Actor-critic}
@@ -699,10 +709,9 @@ use baselined rewards
     \item critic: policy iteration
 \end{itemize}
 
-advantage:
 \begin{equation}
-    A_\pi(s,a) = Q(s,a) - V(s)
-    % \label{eq: advantage}
+    \underbrace{A_\pi(s,a)}_\text{advantage} = Q(s,a) - V(s)
+    % \label{eq:advantage}
 \end{equation}
 
 \subsubsection{Asynchronous Advantage Actor Critic (A3C)}
