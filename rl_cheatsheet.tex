@@ -56,11 +56,12 @@
 \newcommand\con{\item[$-$]}
 
 \begin{center}
-    \Large{Reinforcement Learning} \\ % Cheat Sheet
+    \Large{Reinforcement Learning (RL)} \\ % Cheat Sheet
 \end{center}
 
 \section{Symbols}
 
+\begin{multicols}{2}
 \begin{description}
     % https://en.wikipedia.org/wiki/List_of_mathematical_symbols
     % https://en.wikipedia.org/wiki/List_of_mathematical_symbols_by_subject
@@ -188,19 +189,18 @@
     \item[$\Vert\Vert$]
     vector norm
 \end{description}
+\end{multicols}
 
-\section{Reward}
-% Total \emph{reward}:
-\begin{equation}
-    G_t = \sum_{k = 0}^H \gamma^kr_{t + k + 1}
-    \label{eq: total_reward}
-\end{equation}
-for \emph{discount factor} $\gamma$ and (infinite?) \emph{horizon} $H$.
+\section{Agent-Environment Interface}
+\includegraphics[width=\linewidth]{./images/Agent-Environment.png}
+The Agent at each step $t$ receives a representation of the environment's \emph{state},
+$S_t \in S$ and it selects an action $A_t \in A(s)$.
+From its action the agent receives a \emph{reward}, $R_{t + 1} \in R \in \mathbb{R}$.
 
 \section{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit}{Bandits}}
 \begin{itemize}
-    \item model picking actions without state
-    \item e.g. multi-armed bandit
+    \item solve multi-armed bandit problem
+    \item no state % model picking actions without state
     \item reduces RL to exploration vs exploitation
 \end{itemize}
 
@@ -216,26 +216,24 @@ They estimate $\hat{r}_{a}  $$\approx$$  \mathbb E[r|a]$
 \end{equation}
 
 \subsection{Optimistic-Greedy}
-large initial $\hat{r}_{a}$, R
+large initial $\hat{r}_{a}$ %, R
 
 \subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Semi-uniform_strategies}{\texorpdfstring{$\epsilon$}{Epsilon}-Greedy}}
 for probability $\epsilon$, pick randomly
 
-\subsection{Upper Confidence Bound}
+\subsection{Upper Confidence Bound (UCB)}
 try all for k rounds, then
 \begin{equation}
-    a_{t} = \argmax\limits_{a \in A} { \hat{r}_{a} + \sqrt{\frac{2 log t}{n_{a}}} }
+    a_{t} = \argmax\limits_{a \in A} { \hat{r}_{a} + \sqrt{\frac{2 \log t}{n_{a}}} }
 \end{equation}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Contextual_bandit}{Contextual Bandit}}
 
-LinUCB:
+\subsubsection{Linear UCB (LinUCB)} % Upper Conditional Bound
 \begin{equation}
 \begin{array}{l l}
-    x_{t,a} &= \Phi(s_{t,a})
-    \\
-    \mathbb E[r_{t,a}|x_{t,a}] &= \theta_{a} \cdot x_{t,a}
-    \\
+    x_{t,a} &= \Phi(s_{t,a})\\
+    \mathbb E[r_{t,a}|x_{t,a}] &= \theta_{a} \cdot x_{t,a}\\
     \hat{\theta}_{a} &= A^{-1} b
 \end{array}
 \end{equation}
@@ -249,13 +247,17 @@ Pick actions by probability they maximize expected reward
     \item converges on greedy
 \end{itemize}
 
-\section{Agent-Environment Interface}
-\includegraphics[width=\linewidth]{./images/Agent-Environment.png}
-The Agent at each step $t$ receives a representation of the environment's \emph{state},
-$S_t \in S$ and it selects an action $A_t \in A(s)$.
-From its action the agent receives a \emph{reward}, $R_{t + 1} \in R \in \mathbb{R}$.
+\section{Concepts}
 
-\section{Policy}
+\subsection{Reward}
+% Total \emph{reward}:
+\begin{equation}
+    G_t = \sum_{k = 0}^H \gamma^kr_{t + k + 1}
+    \label{eq: total_reward}
+\end{equation}
+for \emph{discount factor} $\gamma$ and (infinite?) \emph{horizon} $H$.
+
+\subsection{Policy}
 A \emph{policy} maps a state to an action
 \begin{equation}
     \pi_t(a|s)
@@ -263,7 +265,7 @@ A \emph{policy} maps a state to an action
 \end{equation}
 probability to pick an action $A_t = a$ if $S_t = s$.
 
-\section{\href{https://en.wikipedia.org/wiki/Markov_decision_process}{Markov Decision Process (MDP)}}
+\subsection{\href{https://en.wikipedia.org/wiki/Markov_decision_process}{Markov Decision Process (MDP)}}
 
 a 5-tuple $(S, A, P, R, \gamma)$ % where:
 \begin{equation}
@@ -279,42 +281,33 @@ a 5-tuple $(S, A, P, R, \gamma)$ % where:
         \end{array}
 \end{equation}
 
-\section{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{Value Function}}
+\subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{Value Function}}
 
 Value (expected return, total discounted reward) of a specific state $s$ under policy $\pi$ for a MDP:
 
 \begin{equation}
 \begin{array}{l l}
     v_{\pi}(s) &= \mathbb{E}_{\pi}[G_t | S_t = s]\\
-    \\
     % &=  \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^kR_{t + k + 1} | S_t = s]\\
-    % \\
     % &= \mathbb{E}_{\pi}[R_{t + 1} + \sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_t = s]\\
-    % \\
     % &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)}_{\text{Sum of all probabilities $\forall$ possible $r$}} \\
     % & [r + \gamma \underbrace{\mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t + 1} = s']}_{\text{Expected reward from } s_{t + 1}}]\\
-    % \\
     &= \sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)[r + \gamma v_{\pi}(s')]\\
     v_{\textcolor{red}{\ast}}(s) &= \textcolor{red}{\max\limits_{\pi}} v_\pi(s)
 \end{array}
 \label{eq: value_func}
 \end{equation}
 
-\section{Action-Value (Q) Function}
+\subsection{Action-Value (Q) Function}
 
 expected reward for state-action pairs:
 \begin{equation}
 \begin{array}{l l}
     q_{\pi}(s,a) &= \mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]\\
-    % \\
     % &= \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 1} | S_t = s, A_t = a]\\
-    % \\
     % &= \mathbb{E}_{\pi}[R_{t+1} + \sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 2} | S_t = s, A_t = a]\\
-    % \\
     % &=\sum\limits_{s',r} p(s',r|s,a)[r +\mathbb{E}_{\pi} [\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t+1} = s']]\\
-    % \\
     &=\sum\limits_{s',r} p(s',r|s,a)[r + \gamma V_{\pi}(s')]\\
-    % \\
     q_{\textcolor{red}{\ast}}(s,a) &= \textcolor{red}{\max\limits_{\pi}} q_\pi(s,a)
 \end{array}
 \label{eq: q_func}
@@ -327,15 +320,10 @@ rewriting $v_\ast$ for $q_\ast(s,a)$:
 
 i.e. state value under optimal policy \textbf{=} expected return from its best action.
 
-\section{Bellman Equation}
+\subsection{Bellman Equation}
 Recursive property $Value$ \ref{eq: value_func} / $Q$ \ref{eq: q_func} functions
 
-\section{Model-based Methods (known MDP)}
-
-\section{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Brute_force}{Exhaustive Search}}
-usually computationally unviable.
-
-\section{Contraction Mapping}
+\subsection{Contraction Mapping}
 
 For metric space $(X, d)$ and $f: X \rightarrow X$, $f$ is a \emph{contraction} given
 a \emph{Lipschitz coefficient} $k \in [0, 1)$ where for all $x$ / $y$ in $X$:
@@ -344,7 +332,7 @@ a \emph{Lipschitz coefficient} $k \in [0, 1)$ where for all $x$ / $y$ in $X$:
     d(f(x), f(y)) \leq k d(x, y)
 \end{equation}
 
-\subsection{Contraction Mapping theorem}
+\subsubsection{Contraction Mapping theorem}
 
 For complete metric space $(X,d)$ and contraction $f: X \rightarrow X$,
 there is only 1 fixed point $x^\ast$ where $f(x^\ast) = x^\ast$.
@@ -353,14 +341,19 @@ For point $x$ in $X$, and $f^n(x)$ inductively defined by $f^n(x)=f(f^{n−1}(x)
 $f^n(x) \rightarrow x^\ast$ as $n \rightarrow \infty$,
 yielding a unique optimal solution for DP.
 
-\section{\href{https://en.wikipedia.org/wiki/Dynamic_programming}{Dynamic Programming (DP)}}
+\section{Model-based Methods (known MDP)}
+
+\subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Brute_force}{Exhaustive Search}}
+brute force, usually computationally unviable.
+
+\subsection{\href{https://en.wikipedia.org/wiki/Dynamic_programming}{Dynamic Programming (DP)}}
 \begin{itemize}
     \pro bootstrap (learn mid-episode)
 \end{itemize}
 
 Find $\pi_\ast$ for $V$ / $Q$:
 
-\subsection{Policy Iteration}
+\subsubsection{Policy Iteration}
 
 \begin{algorithm}[H]
 %\SetAlgoLined
@@ -395,7 +388,7 @@ Policy iteration methods:
 \item generated policy iteration (GPI)
 \end{itemize}
 
-\subsection{Value Iteration}
+\subsubsection{Value Iteration}
 ditch $V(s)$ convergence for policy improvement and truncated policy eval step in 1 operation:
 \begin{algorithm}[H]
   \SetKwInOut{Output}{output}
@@ -417,7 +410,7 @@ ditch $V(s)$ convergence for policy improvement and truncated policy eval step i
 
 \section{Model-free methods}
 
-\section{\href{https://en.wikipedia.org/wiki/Monte_Carlo_sampling}{Monte Carlo (MC) Methods}}
+\subsection{\href{https://en.wikipedia.org/wiki/Monte_Carlo_sampling}{Monte Carlo (MC) Methods}}
 \begin{itemize}
     \item uses \textbf{averaging sample returns} per state-action pair
     \item episodic
@@ -449,7 +442,7 @@ estimate for non-stationary problems:
 \end{equation}
 for learning rate $\alpha$, how much we want to forget about past experiences.
 
-\section{\href{https://en.wikipedia.org/wiki/Temporal_difference_learning}{Temporal Difference (TD)}}
+\subsection{\href{https://en.wikipedia.org/wiki/Temporal_difference_learning}{Temporal Difference (TD)}}
 \begin{itemize}
     \pro DP's bootstrap
     \pro MC's sampling
@@ -460,7 +453,7 @@ for learning rate $\alpha$, how much we want to forget about past experiences.
     V(S_t) \leftarrow V(S_t) + \alpha [R_{t + 1} + \gamma V(S_{t+1} - V(S_t)]
 \end{equation}
 
-\subsection{\href{https://en.wikipedia.org/wiki/State-action-reward-state-action}{State-action-reward-state-action (SARSA)}}
+\subsubsection{\href{https://en.wikipedia.org/wiki/State-action-reward-state-action}{State-action-reward-state-action (SARSA)}}
 \begin{itemize}
     \item on-policy TD control
     \item can use priors
@@ -485,7 +478,7 @@ for learning rate $\alpha$, how much we want to forget about past experiences.
     }
 \end{algorithm}
    
-\subsection{\texorpdfstring{$n$}{n}-step Sarsa (\texorpdfstring{$n$}{n}-step TD)}
+\paragraph{\texorpdfstring{$n$}{n}-step Sarsa (\texorpdfstring{$n$}{n}-step TD)}
 
 for $n$-step Q-Return:
 % $n$-step Sarsa update $Q(s, a)$ towards the $n$-step Q-return
@@ -497,7 +490,7 @@ for $n$-step Q-Return:
 \end{array}
 \end{equation}
 
-\subsection{Forward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
+\paragraph{Forward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
 
 \begin{equation}
 \begin{array}{l l}
@@ -506,7 +499,7 @@ for $n$-step Q-Return:
 \end{array}
 \end{equation}
 
-\subsection{Backward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
+\paragraph{Backward View Sarsa(\texorpdfstring{$\lambda$}{lambda}) (/ TD(\texorpdfstring{$\lambda$}{lambda}))}
 
 \begin{itemize}
     \pro more efficient
@@ -524,7 +517,7 @@ for $n$-step Q-Return:
 \end{array}
 \end{equation}
 
-\section{Linear Function Approximation}
+\subsection{Linear Function Approximation}
 \begin{itemize}
     \pro efficient
     \pro generalize
@@ -540,7 +533,7 @@ update temporal difference error, minimize squared loss:
 \end{array}
 \end{equation}
 
-\section{\href{https://en.wikipedia.org/wiki/Q-learning}{Q Learning}}
+\subsection{\href{https://en.wikipedia.org/wiki/Q-learning}{Q Learning}}
 
 \begin{equation}
 \begin{array}{l l}
@@ -557,14 +550,14 @@ update temporal difference error, minimize squared loss:
 \end{array}
 \end{equation}
 
-\subsection{Replay Memory}
+\subsubsection{Replay Memory}
 update $\theta$ by SGD
 
 \begin{equation}
     \nabla_{\theta_{i}}J(\theta_{i}) = \mathbb{E}_{(s_{t},a_{t},r_{t},s_{t+1}) \sim D} \delta \nabla_{\theta_{i}}Q(\phi(s_{t},a_{t}); \theta)
 \end{equation}
 
-\subsection{\href{https://en.wikipedia.org/wiki/Q-learning\#Deep_Q-learning}{Deep Q Learning (DQL)}}
+\subsubsection{\href{https://en.wikipedia.org/wiki/Q-learning\#Deep_Q-learning}{Deep Q Learning (DQL)}}
 
 Made by $DeepMind$, uses a deep neural net (\emph{Q-network}) for the $Q$ function.
 Keeps $N$ observations in a $memory$ to train on.
@@ -604,22 +597,24 @@ for network weights $\theta$ and experience replay history $U(D)$.
  }
 \end{algorithm}
 
-\subsection{Prioritized Replay Memory}
+\paragraph{Prioritized Replay Memory}
 learn esp. from high loss (traumas)
 
 \begin{equation}
     p(s_{t},a_{t},r_{t},s_{t+1}) \propto r_{t} + \gamma \max\limits_{a \in A} Q(\Phi(s_{t+1},a); \theta_{i}^{-})
 \end{equation}
 
-\subsection{\href{https://en.wikipedia.org/wiki/Q-learning\#Double_Q-learning}{Double DQN}}
+\subsubsection{\href{https://en.wikipedia.org/wiki/Q-learning\#Double_Q-learning}{Double DQN}}
 solve bias from reused $\theta$, faster
 
 \begin{equation}
     y = r_t + \gamma Q(\Phi(s_{t+1}, \textcolor{red}{\argmax\limits_{a \in A}} Q(\Phi(s_{t+1},a); \textcolor{red}{\theta_i})); \textcolor{red}{\theta_i^{-}})
 \end{equation}
 
-\section{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Direct_policy_search}{Policy Gradient}}
+\subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Direct_policy_search}{Direct Policy Search}}
 learn $\pi$.
+
+\subsubsection{Policy Gradient}
 \begin{itemize}
     \pro simpler than $Q$ or $V$
     \pro allows stochastic policy (rock-paper-scissors)
@@ -631,7 +626,7 @@ learn $\pi$.
     L = \mu (log  p(a|s) \cdot R(s))
 \end{equation}
 
-\section{Likelihood Ratio}
+\subsection{Likelihood Ratio}
 
 return state-action trajectory:
 \begin{equation}
@@ -642,7 +637,7 @@ expected return:
 \begin{equation}
 \begin{array}{l l}
     J(\theta) &= \mathbb{E}[\sum_{t=0}^T R(s_t,a_t); \pi_\theta]\\
-    &= \sum_\tau^T R(s_t,a_t); \pi_\theta \\
+    &= \sum_\tau^T R(s_t,a_t); \pi_\theta\\
 \end{array}
 \end{equation}
 
@@ -658,22 +653,22 @@ yielding:
 
 % given gradient:
 % \begin{equation}
-%     \nabla_x log f(x) = \frac{\nabla_x f(x)}{f(x)}
+%     \nabla_x \log f(x) = \frac{\nabla_x f(x)}{f(x)}
 % \end{equation}
 
 % yields:
 \begin{equation}
-    \textcolor{red}{\nabla_\theta} J(\theta) = \sum_\tau P(\tau; \theta) \textcolor{red}{\nabla_\theta log P(\tau; \theta)} R(\tau)
+    \textcolor{red}{\nabla_\theta} J(\theta) = \sum_\tau P(\tau; \theta) \textcolor{red}{\nabla_\theta \log P(\tau; \theta)} R(\tau)
 \end{equation}
 
 sampled over m trajectories:
 \begin{equation}
-    \nabla_\theta J(\theta) = \textcolor{red}{\frac{1}{m}} \sum_{\textcolor{red}{i=1}}^{\textcolor{red}{m}} P(\tau; \theta) \nabla_\theta log P(\tau^{\textcolor{red}{i}}; \theta) R(\tau^{\textcolor{red}{i}})
+    \nabla_\theta J(\theta) = \textcolor{red}{\frac{1}{m}} \sum_{\textcolor{red}{i=1}}^{\textcolor{red}{m}} P(\tau; \theta) \nabla_\theta \log P(\tau^{\textcolor{red}{i}}; \theta) R(\tau^{\textcolor{red}{i}})
 \end{equation}
 
 gradient chases reward.
 
-\section{REINFORCE}
+\subsection{REINFORCE}
 
 \begin{itemize}
     \item Get info on states/actions/rewards for policy during episode
@@ -690,14 +685,14 @@ desired loss function:
     \textcolor{red}{\frac{1}{m}} \sum_{t=1}^m \nabla_\theta \log \pi_\theta(a_t|s_t) R
 \end{equation}
 
-\subsection{Baselined REINFORCE}
+\subsubsection{Baselined REINFORCE}
 use baselined rewards
 
 \begin{equation}
     \nabla_\theta J(\theta)=\sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_{t}|s_{t}) (R \textcolor{red}{- V_{\phi(s_{t})}})
 \end{equation}
 
-\section{Actor-critic}
+\subsection{Actor-critic}
 \begin{itemize}
     \pro less variance than Baselined REINFORCE
     \item actor (makes policy): policy gradient
@@ -710,7 +705,7 @@ advantage:
     % \label{eq: advantage}
 \end{equation}
 
-\subsection{Asynchronous Advantage Actor Critic (A3C)}
+\subsubsection{Asynchronous Advantage Actor Critic (A3C)}
 \begin{itemize}
     \item 5-step Q-Value estimation
     \item shares params between actor/critic
