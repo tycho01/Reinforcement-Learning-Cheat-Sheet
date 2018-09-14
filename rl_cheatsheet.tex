@@ -31,7 +31,7 @@
     {1ex plus .2ex}%
     {\normalfont\small\bfseries}}
 \setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
-% wrappable brace text
+% wrappable brace text\substack{\text{Some long text that} \\ \text{should be multiline}}
 \newlength\ubwidth
 \newcommand\parunderbrace[2]{\settowidth\ubwidth{$#1$}\underbrace{#1}_{\parbox{\ubwidth}{\scriptsize\RaggedRight#2}}}
 \newcommand\paroverbrace[2]{\settowidth\ubwidth{$#1$}\overbrace{#1}^{\parbox{\ubwidth}{\scriptsize\RaggedRight#2}}}
@@ -66,7 +66,7 @@
 \newcommand\red{\textcolor{red}}
 
 \begin{center}
-    \Large{Reinforcement Learning (RL)} \\ % Cheat Sheet
+    \Large{\href{https://github.com/tycho01/Reinforcement-Learning-Cheat-Sheet}{Reinforcement Learning (RL)}} \\ % Cheat Sheet
 \end{center}
 
 \section{Symbols}
@@ -142,8 +142,12 @@
     % count
     % \item[$\mathbb{N}$]
     % natural number space
+    \item[$O$]
+    conditional observation probabilities
     % \item[$O / \Omega$]
     % order of magnitude
+    \item[$\Omega$]
+    observations
     % \item[$p$]
     % probability ($0 \sim 1$)
     \item[$Pr$]
@@ -170,6 +174,8 @@
     % sum
     \item[$t$]
     time % (sub), target value (given)
+    \item[$T$]
+    conditional transition probabilities between states
     \item[$\tau$]
     trajectory
     \item[$\theta$]
@@ -278,11 +284,17 @@
     \con no 2nd chance for arms unlucky on first try
 \end{itemize}
 
-\subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Semi-uniform_strategies}{\texorpdfstring{$\epsilon$}{Epsilon}-Greedy}}
+\subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Semi-uniform_strategies}{\texorpdfstring{$\epsilon$}{Epsilon}-Greedy} aka \texorpdfstring{$\epsilon$}{Epsilon}-Soft}}
 \begin{itemize}
     \item at probability $\epsilon$ pick randomly
     \pro not fooled by unlucky first try
     \con linear regret from constant exploration
+\end{itemize}
+
+\subsection{Decaying \texorpdfstring{$\epsilon$}{Epsilon}-Greedy}
+\begin{itemize}
+    \item decay $\epsilon$ over time
+    \item optimistic initial values
 \end{itemize}
 
 \subsection{Upper Confidence Bound (UCB)}
@@ -296,6 +308,7 @@ try all for k rounds, then
 \begin{itemize}
     \item explore then gradually exploit
     \pro logarithmic regret
+    \item like \emph{decaying $\epsilon$ greedy}
 \end{itemize}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Multi-armed_bandit\#Contextual_bandit}{Contextual Bandit}}
@@ -320,7 +333,17 @@ Pick actions by probability they maximize expected reward
 
 \section{\href{https://en.wikipedia.org/wiki/Markov_decision_process}{Markov Decision Process (MDP)}}
 
-a 5-tuple $(S, A, P, R, \gamma)$
+\begin{itemize}
+    \item a 5-tuple $(S, A, P, R, \gamma)$
+    \item current state relevant, history is not
+\end{itemize}
+
+\subsection{\href{https://en.wikipedia.org/wiki/Partially_observable_Markov_decision_process}{partially observable Markov decision process (POMDP)}}
+
+\begin{itemize}
+    \item a 7-tuple $(S,A,T,R,\Omega,O,\gamma)$
+    \item history now relevant to infer hidden state
+\end{itemize}
 
 \begin{equation}
     \begin{array}{l l}
@@ -329,22 +352,23 @@ a 5-tuple $(S, A, P, R, \gamma)$
         % probability to pick an action $A_t = a$ if $S_t = s$.
         p(s'|s,a) &= \underbrace{Pr \{S_{t + 1} = s' | S_t=s,A_t=a\}}_\text{state transition probabilities}\\
         r(s',s, a) &= \underbrace{\mathbb{E}[ R_{t + 1} | S_{t + 1}=s',S_t=s,A_t=a]}_\text{expected return for state-action-nexstate}\\
-        \underbrace{v_{\pi}(s)}_\text{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{value function}} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s]}_\text{expected gain under policy $\pi$ in state $s$}\\
+        \underbrace{v_{\pi}(s)}_\text{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Value_function}{value function}} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s]}_\text{expected gain for policy $\pi$ in state $s$}\\
         % &=  \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^kR_{t + k + 1} | S_t = s]\\
         % &= \mathbb{E}_{\pi}[R_{t + 1} + \sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_t = s]\\
         % &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)}_{\text{Sum of all probabilities $\forall$ possible $r$}} \\
         % & [r + \gamma \underbrace{\mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t + 1} = s']}_{\text{Expected reward from } s_{t + 1}}]\\
         &= \underbrace{\sum\limits_{a} \pi(a | s) \sum\limits_{s'}\sum\limits_{r} p(s', r | s, a)[r + \gamma v_{\pi}(s')]}_\text{recursive definition (Bellman equation)}\\
-        \underbrace{q_{\pi}(s,a)}_\text{action-value (Q) function} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]}_\text{expected reward under policy $\pi$ for a state-action pair}\\
+        \underbrace{q_{\pi}(s,a)}_{\substack{\text{action-value}\\\text{(Q) function}}} &= \underbrace{\mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]}_\text{expected reward for policy $\pi$ for a state-action pair}\\
         % &= \mathbb{E}_{\pi}[\sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 1} | S_t = s, A_t = a]\\
         % &= \mathbb{E}_{\pi}[R_{t+1} + \sum\limits_{k = 0}^{\infty}\gamma^kR_{t + k + 2} | S_t = s, A_t = a]\\
         % &=\sum\limits_{s',r} p(s',r|s,a)[r +\mathbb{E}_{\pi} [\sum\limits_{k = 0}^{\infty} \gamma^k R_{t + k + 2} | S_{t+1} = s']]\\
         &= \underbrace{\sum\limits_{s',r} p(s',r|s,a)[r + \gamma V_{\pi}(s')]}_\text{recursive definition (Bellman equation)}\\
         \underbrace{q_{\red{\ast}}(s,a)}_\text{optimal Q function} &= \red{\max\limits_{\pi}} q_\pi(s,a)\\
-        \underbrace{v_{\red{\ast}}(s)}_\text{state value under optimal policy} &= \red{\max\limits_{\pi}} v_\pi(s)\\
+        \underbrace{v_{\red{\ast}}(s)}_{\substack{\text{state value for}\\\text{optimal policy}}} &= \red{\max\limits_{\pi}} v_\pi(s)\\
         % \text{rewriting $v_\ast$ for $q_\ast(s,a)$}\\
         % v_\ast(s)
         &= \underbrace{\max\limits_{a \in A(s)} q_{\pi_\ast}(s,a)}_\text{expected return from its best action}\\
+        % \underbrace{\pi_\ast}_\text{optimal policy} &= \underbrace{\tau_{a \in A} \sum_{max} \hat{G}}_\text{sequence of actions maxing expected gain}\\
     \end{array}
 \end{equation}
 
@@ -367,6 +391,8 @@ $f^n(x) \rightarrow x^\ast$ as $n \rightarrow \infty$,
 yielding a unique optimal solution for DP.
 
 \section{Model-based Methods (known MDP)}
+
+Unlike bandit algorithms, exploitation here thinks beyond the first next step.
 
 \subsection{\href{https://en.wikipedia.org/wiki/Reinforcement_learning\#Brute_force}{Exhaustive Search}}
 brute force, usually computationally unviable.
@@ -430,6 +456,9 @@ ditch $V(s)$ convergence for policy improvement and truncated policy eval step i
 \end{algorithm}
 
 \section{Model-free methods}
+\begin{itemize}
+    \pro can also handle continuous state spaces
+\end{itemize}
 
 \subsection{\href{https://en.wikipedia.org/wiki/Monte_Carlo_sampling}{Monte Carlo (MC) Methods}}
 \begin{itemize}
@@ -618,7 +647,7 @@ for network weights $\theta$ and experience replay history $U(D)$.
  }
 \end{algorithm}
 
-\paragraph{Prioritized Replay Memory}
+\paragraph{Prioritized Replay Memory / Prioritized Experience Replay}
 
 learn esp. from high loss (traumas)
 
@@ -726,7 +755,51 @@ desired loss function:
 %     Q(s_t,a_t) = E[r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \dots + \gamma^n V(s_{t+n})]
 % \end{equation}
 
-%---------------------------------------------------------------------------
-\href{https://github.com/tycho01/Reinforcement-Learning-Cheat-Sheet}{github.com/tycho01/Reinforcement-Learning-Cheat-Sheet}
+\subsubsection{Actor-Critic with Experience Replay (ACER)}
+\begin{itemize}
+    \item \emph{Retrace} rewritten from truncated importance sampling with bias correction
+    \item stochastic dueling network architectures
+    \item new TRPO method
+\end{itemize}
+
+\subsubsection{\href{https://blog.openai.com/baselines-acktr-a2c/}{Advantage Actor Critic (A2C)}}
+synchronous, deterministic variant of A3C.
+
+\subsubsection{\href{https://blog.openai.com/baselines-acktr-a2c/}{Actor Critic using Kronecker-Factored Trust Region (ACKTR)}}
+more sample-efficient than TRPO/A2C.
+
+\subsection{Deterministic Policy Gradient (DPG)}
+based on actor-critic
+
+\subsubsection{\href{https://arxiv.org/abs/1509.02971}{Deep Deterministic Policy Gradient (DDPG)}}
+DPG variant that can operate over continuous action spaces
+
+\subsection{NoisyNet}
+A3C/DQN/dueling, but add parametric noise to weights to aid exploration
+
+\subsection{\href{https://github.com/tycho01/awesome-deep-rl/blob/master/TRPO.md}{Trust Region Policy Optimization (TRPO)}}
+natural policy gradient method, iterative procedure for optimizing policies, with guaranteed monotonic improvement.
+
+\subsection{Proximal Policy Optimization (PPO)}
+policy gradient method, new objective function enabling multiple epochs of minibatch updates. beats TRPO.
+
+\subsection{Categorical Distributional RL (CDRL)}
+value-based, model distribution of returns i/o expected values.
+
+\subsubsection{C51}
+51-tuple returns.
+
+\subsection{Rainbow}
+combines:
+\begin{enumerate}
+    \item DQN (Deep Q-Network)
+    \item DDQN (Double Deep Q-Network)
+    \item N-Step Q-Learning
+    \item Prioritized Experience Replay (PER)
+    \item Dueling Q-Network
+    \item Distributional RL: C51
+    \item Noisy Network
+\end{enumerate}
+
 \end{multicols}
 \end{document}
